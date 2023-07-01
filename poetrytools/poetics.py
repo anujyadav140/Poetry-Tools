@@ -17,13 +17,22 @@ with open(os.path.join(os.path.dirname(__file__), 'cmudict/cmudict.json')) as js
     CMU = json.load(json_file)
 
 POSSIBLE_METRES = {
+    'iambic dimeter': '0101',
     'iambic trimeter': '010101',
     'iambic tetrameter': '01010101',
     'iambic pentameter': '0101010101',
+    'iambic hexameter': '010101010101',
+    'iambic heptameter': '01010101010101',
     'trochaic tetrameter': '10101010',
-    'trochaic pentameter': '1010101010'
+    'trochaic pentameter': '1010101010',
+    'dactyl hexameter': '100100100100100',
+    'dactyl tetrameter': '100100100100',
+    'anapaest trimeter': '001001001',
+    'anapaest tetrameter': '001001001001',
 }
-
+#  'iambic hexameter': '010101010101',
+#     'iambic heptameter': '01010101010101',
+#  'spondee': '11',
 POSSIBLE_RHYMES = {
     'couplets': 'aabbccddeeff',
     'alternate rhyme': 'ababcdcdefefghgh',
@@ -258,6 +267,8 @@ def guess_form(tokenized_poem, verbose=False):
     rhyme_scheme_string, rhyme = guess_rhyme_type(tokenized_poem)
     stanza_length_string, stanza = guess_stanza_type(tokenized_poem)
 
+    result_dict = {}
+
     if verbose:
         print("Metre: " + ' '.join(metrical_scheme))
         print("Rhyme scheme: " + rhyme_scheme_string)
@@ -267,46 +278,58 @@ def guess_form(tokenized_poem, verbose=False):
         print("Closest rhyme: " + rhyme)
         print("Closest stanza type: " + stanza)
         print("Guessed form: ", end="")
+        result_dict['Metre'] = ' '.join(metrical_scheme)
+        result_dict['Rhyme scheme'] = rhyme_scheme_string
+        result_dict['Stanza lengths'] = stanza_length_string
+        result_dict['Closest metre'] = metre
+        result_dict['Closest rhyme'] = rhyme
+        result_dict['Closest stanza type'] = stanza
+        result_dict['Guessed form'] = ""
 
     if num_lines == 3 and within_ranges(line_lengths, [(4, 6), (6, 8), (4, 6)]):
-        return 'haiku'
+        result_dict['Guessed form'] = 'haiku'
 
     if num_lines == 5:
         if line_lengths == [1, 2, 3, 4, 10]:
-            return 'tetractys'
+            result_dict['Guessed form'] = 'tetractys'
 
         if within_ranges(line_lengths, [(8, 11), (8, 11), (5, 7), (5, 7), (8, 11)]):
-            return 'limerick'
+            result_dict['Guessed form'] = 'limerick'
 
         if within_ranges(line_lengths, [(4, 6), (6, 8), (4, 6), (6, 8), (6, 8)]):
-            return 'tanka'
+            result_dict['Guessed form'] = 'tanka'
 
         if rhyme == 'no rhyme':
-            return 'cinquain'
+            result_dict['Guessed form'] = 'cinquain'
 
     if num_lines == 8:
         if within_ranges(line_lengths, [(10, 12) * 11]) and rhyme == 'rima':
-            return 'ottava rima'
+            result_dict['Guessed form'] = 'ottava rima'
 
     if num_lines == 14:
         if metre == 'iambic pentameter' and rhyme == 'shakespearean sonnet' or rhyme == 'alternate rhyme':
-            return 'Shakespearean sonnet'
-        return 'sonnet with unusual meter'
+            result_dict['Guessed form'] = 'Shakespearean sonnet'
+        else:
+            result_dict['Guessed form'] = 'sonnet with unusual meter'
 
     if num_lines == 15:
-        return 'rondeau'
+        result_dict['Guessed form'] = 'rondeau'
 
     if rhyme == 'alternate rhyme' and metre == 'iambic tetrameter':
-        return 'ballad stanza'
+        result_dict['Guessed form'] = 'ballad stanza'
 
     if metre == 'iambic pentameter':
         if rhyme == 'couplets' or rhyme == 'shakespearean sonnet':
-            return 'heroic couplets'
-        if rhyme == 'alternate rhyme':
-            return 'Sicilian quatrain'
-        return 'blank verse'
+            result_dict['Guessed form'] = 'heroic couplets'
+        elif rhyme == 'alternate rhyme':
+            result_dict['Guessed form'] = 'Sicilian quatrain'
+        else:
+            result_dict['Guessed form'] = 'blank verse'
 
-    return 'unknown form'
+    if result_dict['Guessed form'] == "":
+        result_dict['Guessed form'] = 'unknown form'
+
+    return result_dict
 
 
 if __name__ == '__main__':
